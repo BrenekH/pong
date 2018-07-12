@@ -1,5 +1,16 @@
-import time, os, ast, pygame, threading, platform, random
+import time, os, ast, pygame, threading, platform, random, logging
 from _thread import *
+from customEnums import *
+
+#Basic Logging
+logging.basicConfig(level=logging.INFO)
+
+fileLogger = logging.getLogger("pongFileLogger")
+fileHandler = logging.FileHandler("pongLog.log")
+fileFormatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+fileHandler.setFormatter(fileFormatter)
+fileLogger.addHandler(fileHandler)
+fileLogger.setLevel(logging.INFO)
 
 #VARS
 
@@ -20,6 +31,9 @@ messageList = []
 mLLock = threading.Lock()
 score1 = 0
 score2 = 0
+currentGameMode = GameModes.zeroPlayers
+predictedNumLock = threading.Lock()
+predictedNum = 0
 
 #BASIC CONSTANTS
 WIDTH = 1200
@@ -103,6 +117,9 @@ class Ball(pygame.sprite.Sprite):
 		for paddle in Paddles:
 			paddle.reset()
 
+	def getCurrentSpeeds(self):
+		return (self.currentXSpeed, self.currentYSpeed)
+
 	def paddleHit(self):
 		self.currentXSpeed *= -1
 
@@ -126,11 +143,105 @@ class Ball(pygame.sprite.Sprite):
 		elif self.rect.bottom >= HEIGHT:
 			self.currentYSpeed *= -1
 
+class Bot():
+	def __init__(self, paddleNum):
+		self.paddle = paddleNum
+
+	def predictBall(self):
+		#Meant to predict the ball's position when it's moving towards the bot's side
+		#y + ballY = 1(x-ballX)
+		#y = m(paddleX - ballX) - ballY
+		global predictedNum
+		ballXSpeed, ballYSpeed = ball.getCurrentSpeeds()
+		ballX, ballY = ball.rect.center
+		if self.paddle == 2:
+			return
+		elif self.paddle == 1:
+			slope, x, a, b = ((ballYSpeed / ballXSpeed), paddle1.rect.right, ballX, ballY)
+			bYCS = ballYSpeed
+			while True:
+				#fileLogger.info(str((slope, x, a, b)))
+				tempVar = -1 * getYFromPointSlope(slope, x, a, b)
+				#fileLogger.info(tempVar)
+				if tempVar < 0 or tempVar > HEIGHT:
+					#fileLogger.info("TempVar out of range")
+					if bYCS < 0:
+						#fileLogger.info("Ball headed up")
+						var = getXFromPointSlope(slope, 0, a, b)
+						a = var
+						b = 0
+						#fileLogger.info(str((a, b)))
+					else:
+						#fileLogger.info("Ball headed down")
+						var = getXFromPointSlope(slope, -600, a, b)
+						a = var
+						b = 600
+						#fileLogger.info(str((a, b)))
+					slope *= -1
+					bYCS *= -1
+				elif tempVar >= 0 and tempVar <= HEIGHT:
+					#fileLogger.info("TempVar in range")
+					returnValue = tempVar
+					break
+
+			with predictedNumLock:
+				predictedNum = returnValue
+			#fileLogger.info("Finished predicting")
+			return returnValue
+
+#save		returnValue = -1 * ((-1 * (ballYSpeed / ballXSpeed)) * (paddle1.rect.right - ballX) - ballY)
+			"""returnValue = -1 * getYFromPointSlope((ballYSpeed / ballXSpeed), paddle1.rect.right, ballX, ballY)
+			with predictedNumLock:
+				predictedNum = returnValue
+			return returnValue"""
+
+	def movePaddle(self, yPos):
+		global up2, down2, up, down
+		if self.paddle == 2:
+			paddleX, paddleY = paddle2.rect.center
+			if paddleY > yPos:
+				up2 = True
+				down2 = False
+			elif paddleY < yPos:
+				down2 = True
+				up2 = False
+			else:
+				up2 = False
+				down2 = False
+		elif self.paddle == 1:
+			paddleX, paddleY = paddle1.rect.center
+			if paddleY > yPos:
+				up = True
+				down = False
+			elif paddleY < yPos:
+				down = True
+				up = False
+			else:
+				up = False
+				down = False
+
+	def update(self):
+		if self.paddle == 2:
+			self.movePaddle(ball.rect.y)
+		elif self.paddle == 1:
+			bXCS, bYCS = ball.getCurrentSpeeds()
+			if bXCS < 0:
+				self.movePaddle(self.predictBall())
+
 ball = Ball()
 paddle1 = Paddle(50, (HEIGHT/2) - 50)
 paddle2 = Paddle(WIDTH - 75, (HEIGHT/2) - 50)
+bot1 = Bot(2)
+bot2 = Bot(1)
 
 #FUNCTIONS
+def getYFromPointSlope(slope, x, a, b):
+	return ((-1 * slope) * (x - a) - b)
+
+def getXFromPointSlope(slope, y, a, b):
+	#return ((-1 * a) - ((y + b) / (-1 * slope)))
+	return (((y + b) / (-1 * slope)) + a)
+
 def message_to_surface(msg, color, x, y, surface):
 	screen_text = font.render(msg, True, color)
 	surface.blit(screen_text, [x,y])
@@ -158,6 +269,17 @@ def render():
 		mainSpritesLayered.draw(gameDisplay)
 
 		message_to_screen(str(logicClock.get_fps()), WHITE, 0, 570)
+		
+		#Cool prediction lines
+		with predictedNumLock:
+			pygame.draw.line(gameDisplay, RED, ball.rect.center, (paddle1.rect.right, predictedNum))
+		
+		bXCS, bYCS = ball.getCurrentSpeeds()
+		if bYCS < 0:
+			pygame.draw.line(gameDisplay, GREEN, ball.rect.center, (getXFromPointSlope((bYCS/bXCS), 0, ball.rect.x, ball.rect.y), 0))
+		else:
+			pygame.draw.line(gameDisplay, GREEN, ball.rect.center, (getXFromPointSlope((bYCS/bXCS), -1 * HEIGHT, ball.rect.x, ball.rect.y), HEIGHT))
+
 		pygame.display.set_caption("Pong " + str(clock.get_fps()))
 		clock.tick(FRAMERATECAP)
 		pygame.display.update()
@@ -165,6 +287,7 @@ def render():
 start_new_thread(render, ())
 
 #Game loop
+fileLogger.info("Starting game loop")
 while running:
 	#Event handling
 	for event in pygame.event.get():
@@ -176,20 +299,30 @@ while running:
 			elif event.key == pygame.K_s:
 				down = True
 			elif event.key == pygame.K_UP:
-				up2 = True
+				if currentGameMode == GameModes.twoPlayers:
+					up2 = True
 			elif event.key == pygame.K_DOWN:
-				down2 = True
+				if currentGameMode == GameModes.twoPlayers:
+					down2 = True
 		elif event.type == pygame.KEYUP:
 			if event.key == pygame.K_w:
 				up = False
 			elif event.key == pygame.K_s:
 				down = False
 			elif event.key == pygame.K_UP:
-				up2 = False
+				if currentGameMode == GameModes.twoPlayers:
+					up2 = False
 			elif event.key == pygame.K_DOWN:
-				down2 = False
+				if currentGameMode == GameModes.twoPlayers:
+					down2 = False
 
 	#Game logic
+	if currentGameMode == GameModes.onePlayer:
+		bot1.update()
+	elif currentGameMode == GameModes.zeroPlayers:
+		bot1.update()
+		bot2.update()
+
 	if up:
 		paddle1.rect.y -= paddle1.speed
 	if down:
@@ -202,8 +335,8 @@ while running:
 	ball.update()
 	Paddles.update()
 
-	addMessage(str(score1), WHITE, 50, 20)
-	addMessage(str(score2), WHITE, (WIDTH - 100), 20)
+	addMessage(str(score1), WHITE, 100, 20)
+	addMessage(str(score2), WHITE, (WIDTH - 150), 20)
 
 	#Make sure the logic stays at a decent rate
 	logicClock.tick(TICKSPERSECOND)
