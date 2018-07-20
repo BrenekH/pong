@@ -146,63 +146,67 @@ class Ball(pygame.sprite.Sprite):
 class Bot():
 	def __init__(self, paddleNum):
 		self.paddle = paddleNum
+		self.predictedPosition = WIDTH/2
 
 	def predictBall(self):
 		#Meant to predict the ball's position when it's moving towards the bot's side
-		#y + ballY = 1(x-ballX)
-		#y = m(paddleX - ballX) - ballY
 		global predictedNum
 		ballXSpeed, ballYSpeed = ball.getCurrentSpeeds()
 		ballX, ballY = ball.rect.center
 		if self.paddle == 2:
-			return
+			slope, x, a, b = ((ballYSpeed / ballXSpeed), paddle2.rect.left, ballX, ballY)
+			bYCS = ballYSpeed
+			while True:
+				tempVar = -1 * getYFromPointSlope(slope, x, a, b)
+				if tempVar < 0 or tempVar > HEIGHT:
+					if bYCS < 0:
+						var = getXFromPointSlope(slope, 0, a, b)
+						a = var
+						b = 0
+					else:
+						var = getXFromPointSlope(slope, -600, a, b)
+						a = var
+						b = 600
+					slope *= -1
+					bYCS *= -1
+				elif tempVar >= 0 and tempVar <= HEIGHT:
+					returnValue = tempVar
+					break
+
+			return returnValue
+		
 		elif self.paddle == 1:
 			slope, x, a, b = ((ballYSpeed / ballXSpeed), paddle1.rect.right, ballX, ballY)
 			bYCS = ballYSpeed
 			while True:
-				#fileLogger.info(str((slope, x, a, b)))
 				tempVar = -1 * getYFromPointSlope(slope, x, a, b)
-				#fileLogger.info(tempVar)
 				if tempVar < 0 or tempVar > HEIGHT:
-					#fileLogger.info("TempVar out of range")
 					if bYCS < 0:
-						#fileLogger.info("Ball headed up")
 						var = getXFromPointSlope(slope, 0, a, b)
 						a = var
 						b = 0
-						#fileLogger.info(str((a, b)))
 					else:
-						#fileLogger.info("Ball headed down")
 						var = getXFromPointSlope(slope, -600, a, b)
 						a = var
 						b = 600
-						#fileLogger.info(str((a, b)))
 					slope *= -1
 					bYCS *= -1
 				elif tempVar >= 0 and tempVar <= HEIGHT:
-					#fileLogger.info("TempVar in range")
 					returnValue = tempVar
 					break
 
-			with predictedNumLock:
-				predictedNum = returnValue
-			#fileLogger.info("Finished predicting")
 			return returnValue
 
 #save		returnValue = -1 * ((-1 * (ballYSpeed / ballXSpeed)) * (paddle1.rect.right - ballX) - ballY)
-			"""returnValue = -1 * getYFromPointSlope((ballYSpeed / ballXSpeed), paddle1.rect.right, ballX, ballY)
-			with predictedNumLock:
-				predictedNum = returnValue
-			return returnValue"""
 
 	def movePaddle(self, yPos):
 		global up2, down2, up, down
 		if self.paddle == 2:
 			paddleX, paddleY = paddle2.rect.center
-			if paddleY > yPos:
+			if paddleY > yPos + 2:
 				up2 = True
 				down2 = False
-			elif paddleY < yPos:
+			elif paddleY < yPos - 2:
 				down2 = True
 				up2 = False
 			else:
@@ -210,10 +214,10 @@ class Bot():
 				down2 = False
 		elif self.paddle == 1:
 			paddleX, paddleY = paddle1.rect.center
-			if paddleY > yPos:
+			if paddleY > yPos + 3:
 				up = True
 				down = False
-			elif paddleY < yPos:
+			elif paddleY < yPos - 3:
 				down = True
 				up = False
 			else:
@@ -221,12 +225,33 @@ class Bot():
 				down = False
 
 	def update(self):
-		if self.paddle == 2:
-			self.movePaddle(ball.rect.y)
-		elif self.paddle == 1:
+		if ball.rect.y <= 25 or ball.rect.y >= (HEIGHT - 25):
+			if self.paddle == 2:
+				bXCS, bYCS = ball.getCurrentSpeeds()
+				if bXCS > 0:
+					self.predictedPosition = self.predictBall()
+			elif self.paddle == 1:
+				bXCS, bYCS = ball.getCurrentSpeeds()
+				if bXCS < 0:
+					self.predictedPosition = self.predictBall()
+		elif ball.rect.right >= (paddle2.rect.left - 5):
 			bXCS, bYCS = ball.getCurrentSpeeds()
 			if bXCS < 0:
-				self.movePaddle(self.predictBall())
+				self.predictedPosition = self.predictBall()
+		elif ball.rect.left <= (paddle1.rect.right + 5):
+			bXCS, bYCS = ball.getCurrentSpeeds()
+			if bXCS > 0:
+				self.predictedPosition = self.predictBall()
+		if self.paddle == 2:
+			if abs(paddle2.rect.center[1] - self.predictedPosition) >= abs(ball.rect.right - paddle2.rect.left):
+				self.movePaddle(self.predictedPosition)
+			else:
+				self.movePaddle(paddle2.rect.center[1])
+		elif self.paddle == 1:
+			if abs(paddle1.rect.center[1] - self.predictedPosition) >= abs(ball.rect.left - paddle1.rect.right) :
+				self.movePaddle(self.predictedPosition)
+			else:
+				self.movePaddle(paddle1.rect.center[1])
 
 ball = Ball()
 paddle1 = Paddle(50, (HEIGHT/2) - 50)
@@ -270,15 +295,12 @@ def render():
 
 		message_to_screen(str(logicClock.get_fps()), WHITE, 0, 570)
 		
-		#Cool prediction lines
-		with predictedNumLock:
-			pygame.draw.line(gameDisplay, RED, ball.rect.center, (paddle1.rect.right, predictedNum))
-		
-		bXCS, bYCS = ball.getCurrentSpeeds()
+		#Cool prediction lines		
+		"""bXCS, bYCS = ball.getCurrentSpeeds()
 		if bYCS < 0:
 			pygame.draw.line(gameDisplay, GREEN, ball.rect.center, (getXFromPointSlope((bYCS/bXCS), 0, ball.rect.x, ball.rect.y), 0))
 		else:
-			pygame.draw.line(gameDisplay, GREEN, ball.rect.center, (getXFromPointSlope((bYCS/bXCS), -1 * HEIGHT, ball.rect.x, ball.rect.y), HEIGHT))
+			pygame.draw.line(gameDisplay, GREEN, ball.rect.center, (getXFromPointSlope((bYCS/bXCS), -1 * HEIGHT, ball.rect.x, ball.rect.y), HEIGHT))"""
 
 		pygame.display.set_caption("Pong " + str(clock.get_fps()))
 		clock.tick(FRAMERATECAP)
@@ -287,7 +309,7 @@ def render():
 start_new_thread(render, ())
 
 #Game loop
-fileLogger.info("Starting game loop")
+#fileLogger.info("Starting game loop")
 while running:
 	#Event handling
 	for event in pygame.event.get():
