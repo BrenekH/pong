@@ -41,6 +41,12 @@ HEIGHT = 600
 FRAMERATECAP = 60
 TICKSPERSECOND = 100
 
+#BOT CHOICE LISTS
+easyBotList = [1, 1, 1, 0, 0, 0, 0, 0, 0, 0]
+mediumBotList = [1, 1, 1, 1, 1, 0, 0, 0, 0, 0]
+hardBotList = [1, 1, 1, 1, 1, 1, 1, 1, 0, 0]
+impossibleBotList = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+
 #INIT PYGAME THINGS
 pygame.init()
 gameDisplay = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -147,7 +153,34 @@ class Bot():
 	def __init__(self, paddleNum):
 		self.paddle = paddleNum
 		self.predictedPosition = WIDTH/2
+		self.difficulty = BotDiffs.medium
 
+	def setDifficulty(self, diff):
+		self.difficulty = diff
+
+	def getRandomOffset(self):
+		offsetChoice = 1
+		offset = 100
+		
+		if self.difficulty == BotDiffs.easy:
+			offsetChoice = random.choice(easyBotList)
+		elif self.difficulty == BotDiffs.medium:
+			offsetChoice = random.choice(mediumBotList)
+		elif self.difficulty == BotDiffs.hard:
+			offsetChoice = random.choice(hardBotList)
+		elif self.difficulty == BotDiffs.impossible:
+			offsetChoice = random.choice(impossibleBotList)
+		
+		if offsetChoice == 0:
+			if random.choice([True, False]):
+				return offset
+			else:
+				offset *= -1
+		elif offsetChoice == 1:
+			offset = 0
+
+		return offset
+	
 	def predictBall(self):
 		#Meant to predict the ball's position when it's moving towards the bot's side
 		global predictedNum
@@ -172,8 +205,6 @@ class Bot():
 				elif tempVar >= 0 and tempVar <= HEIGHT:
 					returnValue = tempVar
 					break
-
-			return returnValue
 		
 		elif self.paddle == 1:
 			slope, x, a, b = ((ballYSpeed / ballXSpeed), paddle1.rect.right, ballX, ballY)
@@ -195,7 +226,7 @@ class Bot():
 					returnValue = tempVar
 					break
 
-			return returnValue
+		return returnValue + self.getRandomOffset()
 
 #save		returnValue = -1 * ((-1 * (ballYSpeed / ballXSpeed)) * (paddle1.rect.right - ballX) - ballY)
 
@@ -224,24 +255,32 @@ class Bot():
 				up = False
 				down = False
 
-	def update(self):
+	def checkForPosUpdate(self):
+		if ball.rect.left < 58 or ball.rect.right > (WIDTH - 70):
+			return False
 		if ball.rect.y <= 25 or ball.rect.y >= (HEIGHT - 25):
 			if self.paddle == 2:
 				bXCS, bYCS = ball.getCurrentSpeeds()
 				if bXCS > 0:
-					self.predictedPosition = self.predictBall()
+					return True
 			elif self.paddle == 1:
 				bXCS, bYCS = ball.getCurrentSpeeds()
 				if bXCS < 0:
-					self.predictedPosition = self.predictBall()
+					return True
 		elif ball.rect.right >= (paddle2.rect.left - 5):
 			bXCS, bYCS = ball.getCurrentSpeeds()
 			if bXCS < 0:
-				self.predictedPosition = self.predictBall()
+				return True
 		elif ball.rect.left <= (paddle1.rect.right + 5):
 			bXCS, bYCS = ball.getCurrentSpeeds()
 			if bXCS > 0:
-				self.predictedPosition = self.predictBall()
+				return True
+		else:
+			return False
+
+	def update(self):
+		if self.checkForPosUpdate():
+			self.predictedPosition = self.predictBall()
 		if self.paddle == 2:
 			if abs(paddle2.rect.center[1] - self.predictedPosition) >= abs(ball.rect.right - paddle2.rect.left):
 				self.movePaddle(self.predictedPosition)
@@ -264,7 +303,6 @@ def getYFromPointSlope(slope, x, a, b):
 	return ((-1 * slope) * (x - a) - b)
 
 def getXFromPointSlope(slope, y, a, b):
-	#return ((-1 * a) - ((y + b) / (-1 * slope)))
 	return (((y + b) / (-1 * slope)) + a)
 
 def message_to_surface(msg, color, x, y, surface):
