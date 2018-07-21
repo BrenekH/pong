@@ -31,6 +31,10 @@ messageList = []
 mLLock = threading.Lock()
 score1 = 0
 score2 = 0
+hit1 = 0
+hit2 = 0
+total1 = 0
+total2 = 0
 currentGameMode = GameModes.zeroPlayers
 predictedNumLock = threading.Lock()
 predictedNum = 0
@@ -43,7 +47,7 @@ TICKSPERSECOND = 100
 
 #BOT CHOICE LISTS
 easyBotList = [1, 1, 1, 0, 0, 0, 0, 0, 0, 0]
-mediumBotList = [1, 1, 1, 1, 1, 0, 0, 0, 0, 0]
+mediumBotList = [1, 1, 1, 1, 0, 0, 0, 0, 0, 0]
 hardBotList = [1, 1, 1, 1, 1, 1, 1, 1, 0, 0]
 impossibleBotList = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
@@ -127,10 +131,15 @@ class Ball(pygame.sprite.Sprite):
 		return (self.currentXSpeed, self.currentYSpeed)
 
 	def paddleHit(self):
+		global total1, total2
 		self.currentXSpeed *= -1
+		if self.currentXSpeed > 0:
+			total1 += 1
+		elif self.currentXSpeed < 0:
+			total2 += 1
 
 	def update(self):
-		global score1, score2
+		global score1, score2, hit1, hit2
 		self.rect.x += self.currentXSpeed
 		self.rect.y += self.currentYSpeed
 
@@ -140,9 +149,11 @@ class Ball(pygame.sprite.Sprite):
 
 		if self.rect.x >= WIDTH - 20:
 			score1 += 1
+			hit2 += 1
 			self.reset()
 		elif self.rect.x <= 0:
 			score2 += 1
+			hit1 += 1
 			self.reset()
 		if self.rect.y <= 0:
 			self.currentYSpeed *= -1
@@ -296,7 +307,9 @@ ball = Ball()
 paddle1 = Paddle(50, (HEIGHT/2) - 50)
 paddle2 = Paddle(WIDTH - 75, (HEIGHT/2) - 50)
 bot1 = Bot(2)
+bot1.setDifficulty(BotDiffs.impossible)
 bot2 = Bot(1)
+bot2.setDifficulty(BotDiffs.hard)
 
 #FUNCTIONS
 def getYFromPointSlope(slope, x, a, b):
@@ -397,6 +410,21 @@ while running:
 
 	addMessage(str(score1), WHITE, 100, 20)
 	addMessage(str(score2), WHITE, (WIDTH - 150), 20)
+
+	addMessage("BW" + str(hit1), WHITE, 150, 40)
+	addMessage("BW" + str(hit2), WHITE, (WIDTH - 200), 40)
+
+	addMessage("PH" + str(total1), WHITE, 150, 60)
+	addMessage("PH" + str(total2), WHITE, (WIDTH - 200), 60)
+
+	addMessage("T" + str(total1+hit1), WHITE, 150, 80)
+	addMessage("T" + str(total2+hit2), WHITE, (WIDTH - 200), 80)
+
+	try:
+		addMessage("P" + str((total1+hit1) / total1), WHITE, 150, 100)
+		addMessage("P" + str((total2+hit2) / total2), WHITE, (WIDTH - 200), 100)
+	except:
+		herblferblgerbl = 1
 
 	#Make sure the logic stays at a decent rate
 	logicClock.tick(TICKSPERSECOND)
