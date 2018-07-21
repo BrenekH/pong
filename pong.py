@@ -38,6 +38,7 @@ total2 = 0
 currentGameMode = GameModes.zeroPlayers
 predictedNumLock = threading.Lock()
 predictedNum = 0
+statDisplay = False
 
 #BASIC CONSTANTS
 WIDTH = 1200
@@ -377,6 +378,11 @@ while running:
 			elif event.key == pygame.K_DOWN:
 				if currentGameMode == GameModes.twoPlayers:
 					down2 = True
+			elif event.key == pygame.K_F9:
+				if statDisplay:
+					statDisplay = False
+				else:
+					statDisplay = True
 		elif event.type == pygame.KEYUP:
 			if event.key == pygame.K_w:
 				up = False
@@ -410,21 +416,22 @@ while running:
 
 	addMessage(str(score1), WHITE, 100, 20)
 	addMessage(str(score2), WHITE, (WIDTH - 150), 20)
+	
+	if statDisplay:
+		addMessage("BW" + str(hit1), WHITE, 150, 40)
+		addMessage("BW" + str(hit2), WHITE, (WIDTH - 200), 40)
 
-	addMessage("BW" + str(hit1), WHITE, 150, 40)
-	addMessage("BW" + str(hit2), WHITE, (WIDTH - 200), 40)
+		addMessage("PH" + str(total1), WHITE, 150, 60)
+		addMessage("PH" + str(total2), WHITE, (WIDTH - 200), 60)
 
-	addMessage("PH" + str(total1), WHITE, 150, 60)
-	addMessage("PH" + str(total2), WHITE, (WIDTH - 200), 60)
+		addMessage("T" + str(total1+hit1), WHITE, 150, 80)
+		addMessage("T" + str(total2+hit2), WHITE, (WIDTH - 200), 80)
 
-	addMessage("T" + str(total1+hit1), WHITE, 150, 80)
-	addMessage("T" + str(total2+hit2), WHITE, (WIDTH - 200), 80)
-
-	try:
-		addMessage("P" + str((total1+hit1) / total1), WHITE, 150, 100)
-		addMessage("P" + str((total2+hit2) / total2), WHITE, (WIDTH - 200), 100)
-	except:
-		herblferblgerbl = 1
+		try:
+			addMessage("P" + str((total1+hit1) / total1), WHITE, 150, 100)
+			addMessage("P" + str((total2+hit2) / total2), WHITE, (WIDTH - 200), 100)
+		except:
+			herblferblgerbl = 1
 
 	#Make sure the logic stays at a decent rate
 	logicClock.tick(TICKSPERSECOND)
