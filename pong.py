@@ -23,6 +23,7 @@ BLUE = (0, 0, 255)
 
 #GAME LOOP
 running = True
+testing = False
 up2 = False
 down2 = False
 up = False
@@ -170,6 +171,9 @@ class Bot():
 	def setDifficulty(self, diff):
 		self.difficulty = diff
 
+	def getDifficulty(self):
+		return self.difficulty
+
 	def getRandomOffset(self):
 		offsetChoice = 1
 		offset = 100
@@ -310,7 +314,7 @@ paddle2 = Paddle(WIDTH - 75, (HEIGHT/2) - 50)
 bot1 = Bot(2)
 bot1.setDifficulty(BotDiffs.impossible)
 bot2 = Bot(1)
-bot2.setDifficulty(BotDiffs.hard)
+bot2.setDifficulty(BotDiffs.easy)
 
 #FUNCTIONS
 def getYFromPointSlope(slope, x, a, b):
@@ -383,6 +387,11 @@ while running:
 					statDisplay = False
 				else:
 					statDisplay = True
+			elif event.key == pygame.K_F10:
+				if testing:
+					testing = False
+				else:
+					testing = True
 		elif event.type == pygame.KEYUP:
 			if event.key == pygame.K_w:
 				up = False
@@ -432,6 +441,23 @@ while running:
 			addMessage("P" + str((total2+hit2) / total2), WHITE, (WIDTH - 200), 100)
 		except:
 			herblferblgerbl = 1
+
+	if testing:
+		addMessage("TESTING", WHITE, 580, 20)
+		if (total1+hit1) >= 10000:
+			realTotal = total1+hit1
+			percentage = realTotal / total1
+			botDiff = bot2.getDifficulty()
+			fileLogger.INFO("Diff: {botDiff}; BW: {hit1}; PH: {total1}; T: {realTotal}; P: {percentage};")
+			total1, hit1 = (0, 0)
+			if bot2.getDifficulty() == BotDiffs.easy:
+				bot2.setDifficulty(BotDiffs.medium)
+			elif bot2.getDifficulty() == BotDiffs.medium:
+				bot2.setDifficulty(BotDiffs.hard)
+			elif bot2.getDifficulty() == BotDiffs.hard:
+				bot2.setDifficulty(BotDiffs.impossible)
+			elif bot2.getDifficulty() == BotDiffs.impossible:
+				bot2.setDifficulty(BotDiffs.easy)
 
 	#Make sure the logic stays at a decent rate
 	logicClock.tick(TICKSPERSECOND)
