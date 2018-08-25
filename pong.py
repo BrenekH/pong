@@ -1,6 +1,8 @@
 import time, os, ast, pygame, threading, platform, random, logging
+import eventHandlers as eHS
 from _thread import *
 from customEnums import *
+from menus import *
 
 #Basic Logging
 logging.basicConfig(level=logging.INFO)
@@ -23,6 +25,7 @@ BLUE = (0, 0, 255)
 
 #GAME LOOP
 running = True
+menuRunning = True
 testing = False
 up2 = False
 down2 = False
@@ -45,7 +48,8 @@ statDisplay = False
 WIDTH = 1200
 HEIGHT = 600
 FRAMERATECAP = 60
-TICKSPERSECOND = 100
+TICKSPERSECOND = 50
+targetTPS = 50
 
 #BOT CHOICE LISTS
 easyBotList = [1, 1, 1, 0, 0, 0, 0, 0, 0, 0]
@@ -68,10 +72,6 @@ Paddles = pygame.sprite.Group()
 Balls = pygame.sprite.Group()
 
 #CLASSES
-class Button(pygame.sprite.Sprite):
-	def __init__(self):
-		pygame.sprite.Sprite.__init__(self)
-
 class Paddle(pygame.sprite.Sprite):
 	def __init__(self, rX, rY):
 		pygame.sprite.Sprite.__init__(self)
@@ -335,6 +335,19 @@ def addMessage(msg, color, x, y):
 	with mLLock:
 		messageList.append({"message": msg, "color": color, "x": x, "y": y})
 
+def menuLoop(menuPanel):
+	global menuRunning
+	while menuRunning:
+		gameDisplay.fill(BLACK)
+		for event in pygame.event.get():
+			if event.type == pygame.QUIT:
+				pygame.quit()
+		menuPanel.checkForButtonPress()
+		if menuPanel.checkCloseMenu():
+			break
+		menuPanel.render(gameDisplay)
+		pygame.display.update()
+
 def render():
 	global messageList, logicClock
 	while running:
@@ -362,10 +375,15 @@ def render():
 		clock.tick(FRAMERATECAP)
 		pygame.display.update()
 
+mainMenuPanel = MenuPanel()
+mainMenuPanel.addText(Text(570, 200, "Pong", WHITE))
+mainMenuPanel.addButton(Button(600, 300, 60, 40, WHITE, "Play", BLACK, eHS.testClickHandler))
+menuLoop(mainMenuPanel)
+
 start_new_thread(render, ())
 
 #Game loop
-#fileLogger.info("Starting game loop")
+fileLogger.info("Starting game loop")
 while running:
 	#Event handling
 	for event in pygame.event.get():
@@ -448,7 +466,7 @@ while running:
 			realTotal = total1+hit1
 			percentage = realTotal / total1
 			botDiff = bot2.getDifficulty()
-			fileLogger.INFO("Diff: {botDiff}; BW: {hit1}; PH: {total1}; T: {realTotal}; P: {percentage};")
+			fileLogger.info(f"Diff: {botDiff}; BW: {hit1}; PH: {total1}; T: {realTotal}; P: {percentage};")
 			total1, hit1 = (0, 0)
 			if bot2.getDifficulty() == BotDiffs.easy:
 				bot2.setDifficulty(BotDiffs.medium)
@@ -460,4 +478,9 @@ while running:
 				bot2.setDifficulty(BotDiffs.easy)
 
 	#Make sure the logic stays at a decent rate
+	actualTPS = logicClock.get_fps()
+	if actualTPS < targetTPS:  #IF statement to make sure that any machine will run the logic the same
+		TICKSPERSECOND += 1
+	elif actualTPS > targetTPS:
+		TICKSPERSECOND -= 1
 	logicClock.tick(TICKSPERSECOND)
