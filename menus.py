@@ -43,7 +43,6 @@ class MenuPanel:
 			mouseLeft, mouseMiddle, mouseRight = pygame.mouse.get_pressed()
 			#print(f"x1: {button.rect.x}; y1: {button.rect.y}; x2: {button.rect.x + button.width}; y2: {button.rect.y + button.height}; mouseVal: {mouseLeft}")
 			if gui(button.rect.x, button.rect.y, button.rect.x + button.width, button.rect.y + button.height, mouseLeft):
-				print("GUI returned True")
 				button.onClick()
 
 	def render(self, drawSurface):
@@ -53,7 +52,7 @@ class MenuPanel:
 			text.draw(drawSurface)
 
 class Button(pygame.sprite.Sprite):
-	def __init__(self, x, y, width, height, backgroundColor, text, textColor, eventHandler, args=[]):
+	def __init__(self, x, y, width, height, backgroundColor, text, textColor, eventHandler, args=[], preInverted = False):
 		pygame.sprite.Sprite.__init__(self)
 		self.image = pygame.Surface((width, height))
 		self.image.fill(backgroundColor)
@@ -61,9 +60,14 @@ class Button(pygame.sprite.Sprite):
 
 		self.eventHandler = eventHandler
 		self.args = args
+		self.backgroundColor = backgroundColor
 		self.width, self.height = (width, height)
 		self.text, self.textColor = (text, textColor)
 		self.callCloseMenu = False
+		if preInverted:
+			self.inverted = True
+		else:
+			self.inverted = False
 
 	def onClick(self):
 		try:
@@ -75,6 +79,16 @@ class Button(pygame.sprite.Sprite):
 
 	def updateText(self, updatedText):
 		self.text = updatedText
+
+	def invertColors(self):
+		tempTextColor, tempBackColor = (self.textColor, self.backgroundColor)
+		self.textColor = tempBackColor
+		self.backgroundColor = tempTextColor
+		self.image.fill(self.backgroundColor)
+		if self.inverted:
+			self.inverted = False
+		elif not self.inverted:
+			self.inverted = True
 
 	def message_to_surface(self, msg, color, x, y, surface):
 		screen_text = font.render(msg, True, color)

@@ -1,5 +1,4 @@
 import time, os, ast, pygame, threading, platform, random, logging
-import eventHandlers as eHS
 from _thread import *
 from customEnums import *
 from menus import *
@@ -43,6 +42,7 @@ currentGameMode = GameModes.zeroPlayers
 predictedNumLock = threading.Lock()
 predictedNum = 0
 statDisplay = False
+currentGameModeBackup = None
 
 #BASIC CONSTANTS
 WIDTH = 1200
@@ -312,9 +312,9 @@ ball = Ball()
 paddle1 = Paddle(50, (HEIGHT/2) - 50)
 paddle2 = Paddle(WIDTH - 75, (HEIGHT/2) - 50)
 bot1 = Bot(2)
-bot1.setDifficulty(BotDiffs.impossible)
+bot1.setDifficulty(BotDiffs.medium)
 bot2 = Bot(1)
-bot2.setDifficulty(BotDiffs.easy)
+bot2.setDifficulty(BotDiffs.medium)
 
 #FUNCTIONS
 def getYFromPointSlope(slope, x, a, b):
@@ -347,6 +347,7 @@ def menuLoop(menuPanel):
 			break
 		menuPanel.render(gameDisplay)
 		pygame.display.update()
+	return
 
 def render():
 	global messageList, logicClock
@@ -375,9 +376,141 @@ def render():
 		clock.tick(FRAMERATECAP)
 		pygame.display.update()
 
+#EVENT HANDLERS
+
+def testClickHandler():
+	print("TestClickHandler")
+
+def mainMenuPlayClickHandler():
+	time.sleep(.5)
+	playMenuPanel = MenuPanel()
+	playMenuPanel.addButton(Button(600, 200, 125, 40, WHITE, "0 Players", BLACK, playMenu0PlayersClickHandler))
+	playMenuPanel.addButton(Button(600, 300, 125, 40, WHITE, "1 Player", BLACK, playMenu1PlayersClickHandler))
+	playMenuPanel.addButton(Button(600, 400, 125, 40, WHITE, "2 Players", BLACK, playMenu2PlayersClickHandler))
+	menuLoop(playMenuPanel)
+	return True
+
+def zPMStartClickHandler():
+	return True
+
+def zPMBot1EasyClickHandler(inArgs):
+	zPM = inArgs[0]
+	bot1.setDifficulty(BotDiffs.easy)
+	for x in range(0,4):
+		button = zPM.getButtons()[x]
+		if button.inverted:
+			button.invertColors()
+	zPM.getButtons()[0].invertColors()
+
+def zPMBot1MediumClickHandler(inArgs):
+	zPM = inArgs[0]
+	bot1.setDifficulty(BotDiffs.medium)
+	for x in range(0,4):
+		button = zPM.getButtons()[x]
+		if button.inverted:
+			button.invertColors()
+	zPM.getButtons()[1].invertColors()
+
+def zPMBot1HardClickHandler(inArgs):
+	zPM = inArgs[0]
+	bot1.setDifficulty(BotDiffs.hard)
+	for x in range(0,4):
+		button = zPM.getButtons()[x]
+		if button.inverted:
+			button.invertColors()
+	zPM.getButtons()[2].invertColors()
+
+def zPMBot1ImpossibleClickHandler(inArgs):
+	time.sleep(0.1)
+	zPM = inArgs[0]
+	bot1.setDifficulty(BotDiffs.impossible)
+	for x in range(0,4):
+		button = zPM.getButtons()[x]
+		if button.inverted:
+			button.invertColors()
+	zPM.getButtons()[3].invertColors()
+
+def zPMBot2EasyClickHandler(inArgs):
+	zPM = inArgs[0]
+	bot2.setDifficulty(BotDiffs.easy)
+	for x in range(4, 8):
+		button = zPM.getButtons()[x]
+		if button.inverted:
+			button.invertColors()
+	zPM.getButtons()[4].invertColors()
+
+def zPMBot2MediumClickHandler(inArgs):
+	zPM = inArgs[0]
+	bot2.setDifficulty(BotDiffs.medium)
+	for x in range(4, 8):
+		button = zPM.getButtons()[x]
+		if button.inverted:
+			button.invertColors()
+	zPM.getButtons()[5].invertColors()
+
+def zPMBot2HardClickHandler(inArgs):
+	zPM = inArgs[0]
+	bot2.setDifficulty(BotDiffs.hard)
+	for x in range(4, 8):
+		button = zPM.getButtons()[x]
+		if button.inverted:
+			button.invertColors()
+	zPM.getButtons()[6].invertColors()
+
+def zPMBot2ImpossibleClickHandler(inArgs):
+	time.sleep(0.1)
+	zPM = inArgs[0]
+	bot2.setDifficulty(BotDiffs.impossible)
+	for x in range(4, 8):
+		button = zPM.getButtons()[x]
+		if button.inverted:
+			button.invertColors()
+	zPM.getButtons()[7].invertColors()
+
+def playMenu0PlayersClickHandler():
+	global currentGameMode
+	currentGameMode = GameModes.zeroPlayers
+	zeroPlayersMenuPanel = MenuPanel()
+
+	zeroPlayersMenuPanel.addText(Text(520, 100, "Bot 1 Difficulty", WHITE)) #Bot1Difficulty
+	zeroPlayersMenuPanel.addText(Text(520, 250, "Bot 2 Difficulty", WHITE)) #Bot2Difficulty
+
+	zeroPlayersMenuPanel.addButton(Button(425, 170, 70, 40, 
+										  WHITE, "Easy", BLACK, zPMBot1EasyClickHandler, args=[zeroPlayersMenuPanel])) #Bot1Easy
+	zeroPlayersMenuPanel.addButton(Button(535, 170, 110, 40, 
+										  BLACK, "Medium", WHITE, zPMBot1MediumClickHandler, args=[zeroPlayersMenuPanel], preInverted=True)) #Bot1Medium
+	zeroPlayersMenuPanel.addButton(Button(645, 170, 70, 40, 
+										  WHITE, "Hard", BLACK, zPMBot1HardClickHandler, args=[zeroPlayersMenuPanel])) #Bot1Hard
+	zeroPlayersMenuPanel.addButton(Button(772, 170, 144, 40, 
+										  WHITE, "Impossible", BLACK, zPMBot1ImpossibleClickHandler, args=[zeroPlayersMenuPanel])) #Bot1Impossible
+	
+	zeroPlayersMenuPanel.addButton(Button(425, 320, 70, 40, 
+										  WHITE, "Easy", BLACK, zPMBot2EasyClickHandler, args=[zeroPlayersMenuPanel])) #Bot2Easy
+	zeroPlayersMenuPanel.addButton(Button(535, 320, 110, 40, 
+										  BLACK, "Medium", WHITE, zPMBot2MediumClickHandler, args=[zeroPlayersMenuPanel], preInverted=True)) #Bot2Medium
+	zeroPlayersMenuPanel.addButton(Button(645, 320, 70, 40, 
+										  WHITE, "Hard", BLACK, zPMBot2HardClickHandler, args=[zeroPlayersMenuPanel])) #Bot2Hard
+	zeroPlayersMenuPanel.addButton(Button(772, 320, 144, 40, 
+										  WHITE, "Impossible", BLACK, zPMBot2ImpossibleClickHandler, args=[zeroPlayersMenuPanel])) #Bot2Impossible
+	
+	zeroPlayersMenuPanel.addButton(Button(600, 425, 70, 40, WHITE, "Start", BLACK, zPMStartClickHandler)) #Start
+	
+	menuLoop(zeroPlayersMenuPanel)
+	return True
+
+def playMenu1PlayersClickHandler():
+	global currentGameMode
+	currentGameMode = GameModes.onePlayer
+	return True
+
+def playMenu2PlayersClickHandler():
+	global currentGameMode
+	currentGameMode = GameModes.twoPlayers
+	return True
+
 mainMenuPanel = MenuPanel()
 mainMenuPanel.addText(Text(570, 200, "Pong", WHITE))
-mainMenuPanel.addButton(Button(600, 300, 60, 40, WHITE, "Play", BLACK, eHS.testClickHandler))
+mainMenuPanel.addButton(Button(600, 300, 60, 40, WHITE, "Play", BLACK, mainMenuPlayClickHandler))
 menuLoop(mainMenuPanel)
 
 start_new_thread(render, ())
@@ -391,9 +524,11 @@ while running:
 			running = False
 		elif event.type == pygame.KEYDOWN:
 			if event.key == pygame.K_w:
-				up = True
+				if not currentGameMode == GameModes.zeroPlayers:
+					up = True
 			elif event.key == pygame.K_s:
-				down = True
+				if not currentGameMode == GameModes.zeroPlayers:
+					down = True
 			elif event.key == pygame.K_UP:
 				if currentGameMode == GameModes.twoPlayers:
 					up2 = True
