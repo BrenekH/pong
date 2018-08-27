@@ -501,6 +501,22 @@ def playMenu0PlayersClickHandler():
 def playMenu1PlayersClickHandler():
 	global currentGameMode
 	currentGameMode = GameModes.onePlayer
+	onePlayersMenuPanel = MenuPanel()
+
+	onePlayersMenuPanel.addText(Text(520, 100, "Bot 1 Difficulty", WHITE)) #Bot1Difficulty
+
+	onePlayersMenuPanel.addButton(Button(425, 170, 70, 40, 
+										  WHITE, "Easy", BLACK, zPMBot1EasyClickHandler, args=[onePlayersMenuPanel])) #Bot1Easy
+	onePlayersMenuPanel.addButton(Button(535, 170, 110, 40, 
+										  BLACK, "Medium", WHITE, zPMBot1MediumClickHandler, args=[onePlayersMenuPanel], preInverted=True)) #Bot1Medium
+	onePlayersMenuPanel.addButton(Button(645, 170, 70, 40, 
+										  WHITE, "Hard", BLACK, zPMBot1HardClickHandler, args=[onePlayersMenuPanel])) #Bot1Hard
+	onePlayersMenuPanel.addButton(Button(772, 170, 144, 40, 
+										  WHITE, "Impossible", BLACK, zPMBot1ImpossibleClickHandler, args=[onePlayersMenuPanel])) #Bot1Impossible
+
+	onePlayersMenuPanel.addButton(Button(600, 425, 70, 40, WHITE, "Start", BLACK, zPMStartClickHandler)) #Start
+	
+	menuLoop(onePlayersMenuPanel)	
 	return True
 
 def playMenu2PlayersClickHandler():
@@ -516,7 +532,7 @@ menuLoop(mainMenuPanel)
 start_new_thread(render, ())
 
 #Game loop
-fileLogger.info("Starting game loop")
+#fileLogger.info("Starting game loop")
 while running:
 	#Event handling
 	for event in pygame.event.get():
