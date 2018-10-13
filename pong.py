@@ -344,13 +344,14 @@ def menuLoop(menuPanel):
 				pygame.quit()
 		menuPanel.checkForButtonPress()
 		if menuPanel.checkCloseMenu():
+			menuRunning = False
 			break
 		menuPanel.render(gameDisplay)
 		pygame.display.update()
 	return
 
 def render():
-	global messageList, logicClock
+	global messageList, logicClock, testing
 	while running:
 		gameDisplay.fill(BLACK)
 
@@ -363,16 +364,17 @@ def render():
 
 		mainSpritesLayered.draw(gameDisplay)
 
-		message_to_screen(str(logicClock.get_fps()), WHITE, 0, 570)
+		if testing:
+			message_to_screen(str(logicClock.get_fps()), WHITE, 0, 570)
 		
 		#Cool prediction lines		
-		"""bXCS, bYCS = ball.getCurrentSpeeds()
-		if bYCS < 0:
-			pygame.draw.line(gameDisplay, GREEN, ball.rect.center, (getXFromPointSlope((bYCS/bXCS), 0, ball.rect.x, ball.rect.y), 0))
-		else:
-			pygame.draw.line(gameDisplay, GREEN, ball.rect.center, (getXFromPointSlope((bYCS/bXCS), -1 * HEIGHT, ball.rect.x, ball.rect.y), HEIGHT))"""
+		# """bXCS, bYCS = ball.getCurrentSpeeds()
+		# if bYCS < 0:
+		# 	pygame.draw.line(gameDisplay, GREEN, ball.rect.center, (getXFromPointSlope((bYCS/bXCS), 0, ball.rect.x, ball.rect.y), 0))
+		# else:
+		# 	pygame.draw.line(gameDisplay, GREEN, ball.rect.center, (getXFromPointSlope((bYCS/bXCS), -1 * HEIGHT, ball.rect.x, ball.rect.y), HEIGHT))"""
 
-		pygame.display.set_caption("Pong " + str(clock.get_fps()))
+		# pygame.display.set_caption("Pong ")# + str(clock.get_fps()))
 		clock.tick(FRAMERATECAP)
 		pygame.display.update()
 
