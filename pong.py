@@ -448,8 +448,8 @@ while running:
 			realTotal = total1+hit1
 			percentage = realTotal / total1
 			botDiff = bot2.getDifficulty()
-			fileLogger.INFO("Diff: {botDiff}; BW: {hit1}; PH: {total1}; T: {realTotal}; P: {percentage};")
-			total1, hit1 = (0, 0)
+			fileLogger.info(f"Diff: {botDiff}; BW: {hit1}; PH: {total1}; T: {realTotal}; P: {percentage};")
+			total1, hit1, score1, total2, hit2, score2 = (0, 0, 0, 0, 0, 0)
 			if bot2.getDifficulty() == BotDiffs.easy:
 				bot2.setDifficulty(BotDiffs.medium)
 			elif bot2.getDifficulty() == BotDiffs.medium:
